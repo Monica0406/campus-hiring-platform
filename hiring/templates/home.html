@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Hiring Platform</title>
+
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:Arial,sans-serif;
+        }
+
+        body{
+            background:linear-gradient(135deg,#4facfe,#00f2fe);
+            color:white;
+        }
+
+        nav{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:20px 60px;
+            background:rgba(0,0,0,0.2);
+        }
+
+        nav h2{
+            font-size:28px;
+        }
+
+        nav ul{
+            display:flex;
+            list-style:none;
+        }
+
+        nav ul li{
+            margin-left:25px;
+        }
+
+        nav ul li a{
+            color:white;
+            text-decoration:none;
+            font-weight:bold;
+        }
+
+        .hero{
+            height:85vh;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+            text-align:center;
+        }
+
+        .hero h1{
+            font-size:50px;
+        }
+
+        .hero p{
+            font-size:20px;
+            margin:20px 0;
+        }
+
+        .btn{
+            padding:12px 25px;
+            background:white;
+            color:#0077cc;
+            text-decoration:none;
+            border-radius:8px;
+            font-weight:bold;
+            margin:10px;
+            display:inline-block;
+        }
+
+        .btn:hover{
+            background:#e6e6e6;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<nav>
+    <h2>Campus Hiring</h2>
+
+    <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/student-register/">Student Register</a></li>
+        <li><a href="/student-login/">Student Login</a></li>
+        <li><a href="#">Company</a></li>
+    </ul>
+</nav>
+
+<div class="hero">
+
+    <h1>Welcome to Campus Hiring Platform</h1>
+
+    <p>Find Internships, Jobs and Build Your Career.</p>
+
+    <div>
+        <a href="/student-register/" class="btn">Student Register</a>
+        <a href="/student-login/" class="btn">Student Login</a>
+        <a href="/company-register/" class="btn">Company Register</a>
+        <a href="/company-login/" class="btn">Company Login</a>
+    </div>
+
+</div>
+
+<section style="background:white;color:black;padding:60px;text-align:center;">
+
+    <h2>Why Choose Us?</h2><br>
+
+    <h3>🎓 Student Friendly</h3>
+    <p>Apply for internships with one click.</p><br>
+
+    <h3>🏢 Company Hiring</h3>
+    <p>Post internships and hire talented students.</p><br>
+
+    <h3>⚡ Fast & Secure</h3>
+    <p>Easy login and quick application process.</p>
+
+</section>
+
+</body>
+</html>
