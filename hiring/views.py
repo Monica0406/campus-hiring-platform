@@ -26,10 +26,25 @@ def student_login(request):
         password = request.POST["password"]
 
         try:
-            Student.objects.get(email=email, password=password)
-            return render(request, "student_dashboard.html")
+            student = Student.objects.get(
+                email=email,
+                password=password
+            )
+
+            return render(
+                request,
+                "student_dashboard.html",
+                {"student": student}
+            )
+
         except Student.DoesNotExist:
-            return render(request, "student_login.html", {"error": "Invalid Email or Password"})
+            return render(
+                request,
+                "student_login.html",
+                {"error": "Invalid Email or Password"}
+            )
+
+    return render(request, "student_login.html")
 
     return render(request, "student_login.html")
 def company_register(request):
