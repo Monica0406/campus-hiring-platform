@@ -76,62 +76,67 @@ The current implementation follows a Django-based web application architecture.
 
 ## ER Diagram
 
-The Entity Relationship diagram represents the relationships between the major entities in the campus hiring platform, including students, companies, placement drives, applications, interviews, and offers.
+The Entity Relationship diagram represents the major entities and relationships in the Internship & Campus Hiring Platform.
+
+![ER Diagram](docs/diagrams/er_diagram.png)
 
 ## Tech Stack
 
 ## Current Implementation
-## Layer	                              Technology
-Programming Language	                       Python
-Backend Framework	                       Django
-ORM	                                     Django ORM
-Frontend	                              HTML, CSS, Django Templates
-Database	                              SQLite
-Authentication	                       Password hashing and session-based login
-File Uploads	                              Django Media Files
-Configuration	                              .env environment variables
-Version Control	                       Git
-Repository Hosting	                       GitHub
+
+| Layer                | Technology                               |
+| -------------------- | ---------------------------------------- |
+| Programming Language | Python                                   |
+| Backend Framework    | Django                                   |
+| ORM                  | Django ORM                               |
+| Frontend             | HTML, CSS, Django Templates              |
+| Database             | SQLite                                   |
+| Authentication       | Password Hashing and Session-Based Login |
+| File Uploads         | Django Media Files                       |
+| Configuration        | `.env` Environment Variables             |
+| Version Control      | Git                                      |
+| Repository Hosting   | GitHub                                   |
+
 
 
 ## Planned / Target Technologies
 
 The following technologies are planned for subsequent development phases:
 
-Django REST Framework / REST API
-React frontend
-PostgreSQL or MySQL database
-Pytest-based automated testing
-Swagger / OpenAPI API documentation
-GitHub Actions CI/CD
-Production deployment
+- Django REST Framework / REST API
+- React frontend
+- PostgreSQL or MySQL database
+- Pytest-based automated testing
+- Swagger / OpenAPI API documentation
+- GitHub Actions CI/CD
+- Production deployment
 
 ## Features
 ## Student Module
-Student registration
-Student login
-Password hashing
-Session-based authentication
-Student dashboard
-Student profile information
-Resume upload
-PDF resume validation
-Resume storage using Django media files
+- Student registration
+- Student login
+- Password hashing
+- Session-based authentication
+- Student dashboard
+- Student profile information
+- Resume upload
+- PDF resume validation
+- Resume storage using Django media files
 ## Company Module
-Company registration
-Company login
-Password hashing
-Session-based authentication
-Company dashboard
+- Company registration
+- Company login
+- Password hashing
+- Session-based authentication
+- Company dashboard
 ## Campus Hiring Data Model
 The core database structure has been created for:
 
-Placement Drive
-Application
-Interview
-Offer
+- Placement Drive
+- Application
+- Interview
+- Offer
 
-These models provide the foundation for the complete campus hiring workflow that will be implemented in the upcoming development phases.     
+- These models provide the foundation for the complete campus hiring workflow that will be implemented in the upcoming development phases.     
 
 ## Flow Structure
 
@@ -230,3 +235,5 @@ CAPSPRO/
 - Automated testing
 - API documentation
 - Production deployment
+
+
