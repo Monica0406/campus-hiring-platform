@@ -9,12 +9,12 @@
 - [Overview](#overview)
 - [Problem Statement](#problem-statement)
 - [Architecture Diagram](#architecture-diagram)
+- [ER Diagram](#er-diagram)
 - [Tech Stack](#tech-stack)
 - [Features](#features)
 - [Folder Structure](#folder-structure)
 - [Current Project Status](#current-project-status)
-- [License](#license)
-
+- [Future Enhancements](#future-enhancements)
 
 ---
 
@@ -22,7 +22,7 @@
 
 The Internship & Campus Hiring Platform is designed to support campus hiring activities by connecting students and companies through a centralized web application.
 
-The platform provides student and company registration and login, student dashboards, resume management, and the foundation for managing placement drives, applications, interviews, and offers.
+The current implementation provides student and company registration and login, password hashing, dashboards, session-based authentication, resume upload, PDF validation, and the core database models required for placement drives, applications, interviews, and offers.
 
 The project is currently under active development as a Python/Django capstone project.
 
@@ -34,15 +34,13 @@ The detailed problem statement for the project is documented in:
 
 `Problem_Statement.md`
 
-The problem statement defines the target users, proposed solution, core entities, user roles, scope, and expected outcomes of the platform.
+The problem statement defines the target users, proposed solution, user roles, core entities, project scope, and expected outcomes of the platform.
 
 ---
 
 ## Architecture Diagram
 
-The system architecture follows a Django-based web application structure.
-
-The current implementation consists of:
+The current implementation follows a Django-based web application architecture.
 
 ```text
                     Internship & Campus Hiring Platform
@@ -54,7 +52,7 @@ The current implementation consists of:
                     |                             |
                     v                             v
              Django Templates              Django Views
-             (Frontend/UI)                 (Application Logic)
+              (Frontend/UI)              (Application Logic)
                                                   |
                                                   v
                                            Django ORM
@@ -62,76 +60,80 @@ The current implementation consists of:
                                                   v
                                            Core Models
                                                   |
-                    +--------------+--------------+--------------+
-                    |              |              |              |
-                    v              v              v              v
-                Student         Company          Drive       Application
-                                                                  |
-                                                          +-------+-------+
-                                                          |               |
-                                                          v               v
-                                                      Interview         Offer
-                                                                  |
-                                                                  v
-                                                            SQLite Database
-```
+              +---------------+-------------------+----------------+
+              |               |                   |                |
+              v               v                   v                v
+           Student         Company              Drive         Application
+                                                                    |
+                                                            +-------+-------+
+                                                            |               |
+                                                            v               v
+                                                        Interview         Offer
+                                                                    |
+                                                                    v
+                                                              SQLite Database
+   ```
+
+## ER Diagram
+
+The Entity Relationship diagram represents the relationships between the major entities in the campus hiring platform, including students, companies, placement drives, applications, interviews, and offers.
+
 ## Tech Stack
-### Current Implementation
 
-| Layer | Technology |
-|---|---|
-| Programming Language | Python |
-| Backend Framework | Django |
-| ORM | Django ORM |
-| Frontend | HTML, Django Templates |
-| Database | SQLite |
-| Authentication | Django authentication utilities and session-based login |
-| File Uploads | Django Media Files |
-| Version Control | Git |
-| Repository Hosting | GitHub |
+## Current Implementation
+## Layer	                              Technology
+Programming Language	                       Python
+Backend Framework	                       Django
+ORM	                                     Django ORM
+Frontend	                              HTML, CSS, Django Templates
+Database	                              SQLite
+Authentication	                       Password hashing and session-based login
+File Uploads	                              Django Media Files
+Configuration	                              .env environment variables
+Version Control	                       Git
+Repository Hosting	                       GitHub
 
-### Planned / Target Technologies
 
-As development progresses according to the capstone requirements, the project is planned to include:
+## Planned / Target Technologies
 
-- Django REST Framework / REST API
-- React frontend
-- PostgreSQL or MySQL database
-- Pytest-based automated testing
-- Swagger / OpenAPI API documentation
-- GitHub Actions CI/CD
-- Production deployment
+The following technologies are planned for subsequent development phases:
+
+Django REST Framework / REST API
+React frontend
+PostgreSQL or MySQL database
+Pytest-based automated testing
+Swagger / OpenAPI API documentation
+GitHub Actions CI/CD
+Production deployment
 
 ## Features
+## Student Module
+Student registration
+Student login
+Password hashing
+Session-based authentication
+Student dashboard
+Student profile information
+Resume upload
+PDF resume validation
+Resume storage using Django media files
+## Company Module
+Company registration
+Company login
+Password hashing
+Session-based authentication
+Company dashboard
+## Campus Hiring Data Model
+The core database structure has been created for:
 
-### Student Module
+Placement Drive
+Application
+Interview
+Offer
 
-- Student registration
-- Student login
-- Student dashboard
-- Student profile information
-- Password hashing
-- Session-based authentication
-- Resume upload
-- PDF resume validation
+These models provide the foundation for the complete campus hiring workflow that will be implemented in the upcoming development phases.     
 
-### Company Module
-
-- Company registration
-- Company login
-- Company dashboard
-- Password hashing
-- Session-based authentication
-
-### Campus Hiring Module
-
-- Placement Drive model
-- Application model
-- Interview model
-- Offer model
-
-## Folder Structure
-```text
+## Flow Structure
 
 CAPSPRO/
 │
@@ -144,6 +146,7 @@ CAPSPRO/
 │
 ├── docs/
 │   └── diagrams/
+│       └── ER_Diagram.png
 │
 ├── hiring/
 │   ├── api/
@@ -170,6 +173,13 @@ CAPSPRO/
 │   │   └── __init__.py
 │   │
 │   ├── templates/
+│   │   ├── home.html
+│   │   ├── student_register.html
+│   │   ├── student_login.html
+│   │   ├── student_dashboard.html
+│   │   ├── company_register.html
+│   │   ├── company_login.html
+│   │   └── company_dashboard.html
 │   │
 │   ├── admin.py
 │   ├── apps.py
@@ -178,38 +188,45 @@ CAPSPRO/
 │   └── views.py
 │
 ├── media/
+│   └── resumes/
+│
 ├── manage.py
 ├── Problem_Statement.md
 ├── README.md
+├── .env
 └── .gitignore
-```
 
 ## Current Project Status
 
-The project is currently under active development.
-
-### Completed Areas
+### Completed
 
 - Django project setup
 - Student registration and login
 - Company registration and login
 - Student and company dashboards
-- Resume upload and validation
-- Core campus hiring models
+- Password hashing and session-based authentication
+- Resume PDF upload and validation
+- Core hiring models
 - Database migrations
-- Environment variable configuration
+- `.env` configuration
+- ER diagram
 
 ### In Progress
 
-- Architecture documentation
-- ER diagram
-- Class / Module diagram
+- Placement drive management
+- Student application workflow
+- Interview and offer management
 - REST API implementation
+- React frontend
+- Automated testing
+
+## Future Enhancements
+
+- Placement drive management
+- Student application workflow
+- Interview and offer management
+- Django REST APIs
+- React frontend
 - Automated testing
 - API documentation
-- Deployment configuration
-- CI/CD
-
-## License
-
-This project is developed as a Python capstone project.
+- Production deployment
