@@ -9,7 +9,6 @@
 - [Overview](#overview)
 - [Problem Statement](#problem-statement)
 - [Architecture Diagram](#architecture-diagram)
-- [ER Diagram](#er-diagram)
 - [Tech Stack](#tech-stack)
 - [Features](#features)
 - [Folder Structure](#folder-structure)
@@ -74,15 +73,10 @@ The current implementation follows a Django-based web application architecture.
                                                               SQLite Database
    ```
 
-## ER Diagram
-
-The Entity Relationship diagram represents the major entities and relationships in the Internship & Campus Hiring Platform.
-
-![ER Diagram](docs/diagrams/er_diagram.png)
 
 ## Tech Stack
 
-## Current Implementation
+### Current Implementation
 
 | Layer                | Technology                               |
 | -------------------- | ---------------------------------------- |
@@ -112,7 +106,7 @@ The following technologies are planned for subsequent development phases:
 - Production deployment
 
 ## Features
-## Student Module
+### Student Module
 - Student registration
 - Student login
 - Password hashing
@@ -122,13 +116,13 @@ The following technologies are planned for subsequent development phases:
 - Resume upload
 - PDF resume validation
 - Resume storage using Django media files
-## Company Module
+### Company Module
 - Company registration
 - Company login
 - Password hashing
 - Session-based authentication
 - Company dashboard
-## Campus Hiring Data Model
+### Campus Hiring Data Model
 The core database structure has been created for:
 
 - Placement Drive
@@ -136,10 +130,11 @@ The core database structure has been created for:
 - Interview
 - Offer
 
-- These models provide the foundation for the complete campus hiring workflow that will be implemented in the upcoming development phases.     
+These models provide the foundation for the complete campus hiring workflow that will be implemented in the upcoming development phases.     
 
-## Flow Structure
+## Folder Structure
 
+```text
 CAPSPRO/
 │
 ├── config/
@@ -151,7 +146,7 @@ CAPSPRO/
 │
 ├── docs/
 │   └── diagrams/
-│       └── ER_Diagram.png
+│       └── er_diagram.png
 │
 ├── hiring/
 │   ├── api/
@@ -161,6 +156,11 @@ CAPSPRO/
 │   │   └── __init__.py
 │   │
 │   ├── migrations/
+│   │   ├── __init__.py
+│   │   ├── 0001_initial.py
+│   │   ├── 0002_company.py
+│   │   ├── 0003_student_resume.py
+│   │   └── 0004_drive_application_interview_offer.py
 │   │
 │   ├── models/
 │   │   ├── __init__.py
@@ -188,6 +188,7 @@ CAPSPRO/
 │   │
 │   ├── admin.py
 │   ├── apps.py
+│   ├── models_old.py
 │   ├── tests.py
 │   ├── urls.py
 │   └── views.py
@@ -195,11 +196,15 @@ CAPSPRO/
 ├── media/
 │   └── resumes/
 │
+├── resumes/
+│
 ├── manage.py
+├── db.sqlite3
 ├── Problem_Statement.md
 ├── README.md
 ├── .env
 └── .gitignore
+```
 
 ## Current Project Status
 
@@ -235,5 +240,6 @@ CAPSPRO/
 - Automated testing
 - API documentation
 - Production deployment
+
 
 
