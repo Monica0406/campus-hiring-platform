@@ -1,7 +1,10 @@
+import logging
 from django.shortcuts import render, redirect
 from django.contrib.auth.hashers import make_password, check_password
 
 from .models import Student, Company
+
+logger = logging.getLogger("hiring")
 
 
 # ---------------- HOME ----------------
@@ -14,14 +17,25 @@ def home(request):
 
 def student_register(request):
     if request.method == "POST":
-        Student.objects.create(
-            name=request.POST["name"],
-            email=request.POST["email"],
+        email = request.POST["email"].strip().lower()
+
+        if Student.objects.filter(email=email).exists():
+            logger.warning("Student registration failed: email already exists: %s", email)
+            return render(
+                request,
+                "student_register.html",
+                {"error": "An account with this email already exists."}
+            )
+
+        student = Student.objects.create(
+            name=request.POST["name"].strip(),
+            email=email,
             password=make_password(request.POST["password"]),
-            college=request.POST["college"],
-            department=request.POST["department"],
+            college=request.POST["college"].strip(),
+            department=request.POST["department"].strip(),
             cgpa=request.POST["cgpa"]
         )
+        logger.info("Student registered successfully: id=%s, email=%s", student.id, student.email)
 
         return redirect("/student-login/")
 
@@ -30,15 +44,17 @@ def student_register(request):
 
 def student_login(request):
     if request.method == "POST":
-        email = request.POST["email"]
+        email = request.POST["email"].strip().lower()
         password = request.POST["password"]
 
         student = Student.objects.filter(email=email).first()
 
         if student and check_password(password, student.password):
             request.session["student_id"] = student.id
+            logger.info("Student login successful: id=%s, email=%s", student.id, student.email)
             return redirect("/student-dashboard/")
 
+        logger.warning("Student login failed for email: %s", email)
         return render(
             request,
             "student_login.html",
@@ -103,12 +119,23 @@ def upload_resume(request):
 
 def company_register(request):
     if request.method == "POST":
-        Company.objects.create(
-            company_name=request.POST["company_name"],
-            email=request.POST["email"],
+        email = request.POST["email"].strip().lower()
+
+        if Company.objects.filter(email=email).exists():
+            logger.warning("Company registration failed: email already exists: %s", email)
+            return render(
+                request,
+                "company_register.html",
+                {"error": "An account with this email already exists."}
+            )
+
+        company = Company.objects.create(
+            company_name=request.POST["company_name"].strip(),
+            email=email,
             password=make_password(request.POST["password"]),
-            location=request.POST["location"]
+            location=request.POST["location"].strip()
         )
+        logger.info("Company registered successfully: id=%s, email=%s", company.id, company.email)
 
         return redirect("/company-login/")
 
@@ -117,15 +144,17 @@ def company_register(request):
 
 def company_login(request):
     if request.method == "POST":
-        email = request.POST["email"]
+        email = request.POST["email"].strip().lower()
         password = request.POST["password"]
 
         company = Company.objects.filter(email=email).first()
 
         if company and check_password(password, company.password):
             request.session["company_id"] = company.id
+            logger.info("Company login successful: id=%s, email=%s", company.id, company.email)
             return redirect("/company-dashboard/")
 
+        logger.warning("Company login failed for email: %s", email)
         return render(
             request,
             "company_login.html",
