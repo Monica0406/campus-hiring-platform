@@ -1,25 +1,67 @@
-# Virtual environment
+# ==============================================================================
+# Git Ignore Configuration - Campus Hiring Platform
+# ==============================================================================
+
+# Environment variable files and secrets
+.env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Python virtual environment
 venv/
 .venv/
+env/
+ENV/
 
-# Python cache
+# Python cache & bytecode
 __pycache__/
 *.py[cod]
+*$py.class
+*.pyc
 
 # Django local database
 db.sqlite3
+db.sqlite3-journal
 
-# Environment variables / secrets
-.env
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs & Temporary files
+*.log
+*.tmp
+*.temp
+scratch/
+
+# Node & Frontend build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # User-uploaded media
 media/
+media/resumes/
+media/resumes/*.pdf
 resumes/
 
-# IDE settings
+# IDE / Editor configuration
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.pydevproject
 
-# OS files
+# Operating system files
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Desktop.ini
