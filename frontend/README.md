@@ -180,3 +180,48 @@ The frontend handles JWT authentication seamlessly via Axios interceptors in `sr
 - When an API response returns `401 Unauthorized`, the interceptor automatically attempts to refresh the access token using `POST /api/auth/refresh/` with the stored refresh token.
 - If refresh succeeds, the failed request is replayed transparently without interrupting the user.
 - If refresh fails (or the refresh token expired), stored tokens are cleared and the user is redirected to `/login`.
+
+---
+
+## 7. AWS Amplify Deployment & SPA Rewrite Configuration
+
+### Build Specification (`amplify.yml`)
+
+The repository root includes `amplify.yml` configured for the `frontend/` subdirectory:
+
+```yaml
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - cd frontend
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: frontend/dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - frontend/node_modules/**/*
+```
+
+### Environment Variables in Amplify Console
+
+In the AWS Amplify Console under **App settings > Environment variables**, add:
+- `VITE_API_BASE_URL`: Your deployed backend API URL (e.g. `https://your-service.awsapprunner.com/api`).
+
+### Single Page Application (SPA) Rewrite Rule
+
+Because React Router handles client-side routing, navigating directly or refreshing URLs such as `/drives` or `/student/dashboard` will return HTTP 404 unless a redirect rule is configured.
+
+In the AWS Amplify Console, navigate to **App settings > Rewrites and redirects** and add:
+
+| Field | Value |
+| :--- | :--- |
+| **Source address** | `</^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json)$)([^.]+$)/>` |
+| **Target address** | `/index.html` |
+| **Type** | `200 (Rewrite)` |
