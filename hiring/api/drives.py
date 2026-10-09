@@ -92,6 +92,7 @@ class DriveListCreateView(APIView):
             min_cgpa=data.get("min_cgpa", 0.0),
             allowed_departments=data.get("allowed_departments", "All"),
             eligibility_notes=data.get("eligibility", ""),
+            is_active=data.get("is_active", True),
         )
 
         return api_response(

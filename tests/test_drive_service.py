@@ -102,7 +102,7 @@ def test_get_active_drives(test_company):
         drive_date=today + timedelta(days=5),
     )
     # Create an inactive drive
-    inactive_drive = Drive.objects.create(
+    inactive_drive = drive_service.create_drive(
         company=test_company,
         title="Inactive Drive",
         description="Closed",
@@ -163,3 +163,53 @@ def test_get_drive_by_id_not_found():
     """Verify Drive.DoesNotExist is raised when drive ID does not exist."""
     with pytest.raises(Drive.DoesNotExist):
         drive_service.get_drive_by_id(999999)
+
+
+@pytest.mark.django_db
+def test_create_drive_inactive(test_company):
+    """Verify creating a drive with is_active=False produces an inactive drive."""
+    drive_date = date.today() + timedelta(days=7)
+    drive = drive_service.create_drive(
+        company=test_company,
+        title="Draft Hiring Drive",
+        description="Draft drive pending publication",
+        drive_date=drive_date,
+        is_active=False,
+    )
+
+    assert drive.id is not None
+    assert drive.is_active is False
+
+
+@pytest.mark.django_db
+def test_create_inactive_drive_via_api(test_company):
+    """Verify company can create an inactive drive via POST /api/drives/."""
+    from rest_framework.test import APIClient
+    from rest_framework import status
+
+    client = APIClient()
+    login_res = client.post(
+        "/api/auth/login/",
+        {"email": test_company.email, "password": "password123"},
+        format="json",
+    )
+    token = login_res.data["data"]["access"]
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    drive_date = date.today() + timedelta(days=10)
+    response = client.post(
+        "/api/drives/",
+        {
+            "title": "Draft API Drive",
+            "description": "Pending approval",
+            "drive_date": str(drive_date),
+            "is_active": False,
+        },
+        format="json",
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.data["success"] is True
+    assert response.data["data"]["is_active"] is False
+
+    drive = Drive.objects.get(id=response.data["data"]["id"])
+    assert drive.is_active is False

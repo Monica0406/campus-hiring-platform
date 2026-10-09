@@ -16,7 +16,8 @@ def create_drive(
     drive_date,
     min_cgpa=0.0,
     allowed_departments: str = "All",
-    eligibility_notes: str = ""
+    eligibility_notes: str = "",
+    is_active: bool = True,
 ) -> Drive:
     """
     Creates and saves a new placement drive for a company.
@@ -32,14 +33,15 @@ def create_drive(
         min_cgpa=min_cgpa,
         allowed_departments=allowed_departments.strip() or "All",
         eligibility=eligibility_notes.strip(),
-        is_active=True,
+        is_active=bool(is_active),
     )
     logger.info(
-        "Drive created successfully: id=%s, company='%s', title='%s', min_cgpa=%s",
+        "Drive created successfully: id=%s, company='%s', title='%s', min_cgpa=%s, is_active=%s",
         drive.id,
         company.company_name,
         drive.title,
         drive.min_cgpa,
+        drive.is_active,
     )
     return drive
 
