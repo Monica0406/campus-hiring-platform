@@ -3,6 +3,7 @@ Comprehensive API and Business Logic verification tests for Step 2.
 """
 
 from datetime import date, timedelta
+from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.utils import timezone
 from rest_framework import status
@@ -458,3 +459,14 @@ class CampusHiringAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["success"])
         self.assertEqual(response.data["data"]["status"], "healthy")
+        self.assertEqual(response.data["data"]["database"], "connected")
+
+    @patch("django.db.connection.cursor")
+    def test_15_health_check_database_failure(self, mock_cursor):
+        mock_cursor.side_effect = Exception("Database connection failure")
+        self.client.credentials()  # Unauthenticated
+        response = self.client.get("/api/health/")
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertFalse(response.data["success"])
+        self.assertEqual(response.data["data"]["status"], "unhealthy")
+        self.assertIn("Database connection failure", response.data["data"]["database"])
