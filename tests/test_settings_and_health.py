@@ -88,3 +88,33 @@ def test_allowed_hosts_parsing():
     parsed = parse_hosts(raw_input)
     assert parsed == ["my-service.awsapprunner.com", "custom-domain.com"]
 
+
+def test_static_root_and_whitenoise_configuration():
+    """Verify STATIC_ROOT, WhiteNoise middleware, and STORAGES are configured properly."""
+    assert hasattr(settings, "STATIC_ROOT")
+    assert settings.STATIC_ROOT is not None
+    assert str(settings.STATIC_ROOT).endswith("staticfiles")
+
+    # Verify middleware placement
+    middleware = list(settings.MIDDLEWARE)
+    assert "whitenoise.middleware.WhiteNoiseMiddleware" in middleware
+    sec_index = middleware.index("django.middleware.security.SecurityMiddleware")
+    wn_index = middleware.index("whitenoise.middleware.WhiteNoiseMiddleware")
+    assert wn_index > sec_index, "WhiteNoise must be placed after SecurityMiddleware"
+
+    # Verify STORAGES staticfiles backend
+    staticfiles_storage = settings.STORAGES.get("staticfiles", {}).get("BACKEND")
+    assert "whitenoise" in staticfiles_storage
+
+
+def test_whitenoise_serves_admin_static_assets(client):
+    """Verify that collected static files (e.g. Django admin CSS) are served with HTTP 200."""
+    response = client.get("/static/admin/css/base.css")
+    assert response.status_code == status.HTTP_200_OK
+
+
+def test_swagger_documentation_endpoint_renders(client):
+    """Verify Swagger/OpenAPI documentation endpoint is reachable and returns HTTP 200."""
+    response = client.get("/api/docs/")
+    assert response.status_code == status.HTTP_200_OK
+
