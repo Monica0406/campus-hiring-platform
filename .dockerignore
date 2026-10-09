@@ -1,0 +1,36 @@
+# Environment and secrets
+.env
+.env.*
+*.env
+
+# Version control and agent configs
+.git
+.gitignore
+.gitattributes
+.gemini
+.agents
+
+# Python virtual environment and caches
+venv/
+env/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Frontend dependencies and builds
+frontend/node_modules/
+frontend/dist/
+frontend/.env*
+
+# User-uploaded files and collected static assets
+media/
+staticfiles/
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
