@@ -1,6 +1,21 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
+/**
+ * Normalizes the API base URL to ensure a consistent prefix without trailing slashes.
+ * Automatically appends '/api' if omitted (e.g. when pointing to a root App Runner domain).
+ */
+export function normalizeApiBaseUrl(rawUrl) {
+  const defaultUrl = 'http://127.0.0.1:8000/api';
+  if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) {
+    return defaultUrl;
+  }
+  const cleaned = rawUrl.trim().replace(/\/+$/, '');
+  return cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`;
+}
+
+export const baseURL = normalizeApiBaseUrl(
+  typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_API_BASE_URL : undefined
+);
 
 const apiClient = axios.create({
   baseURL,
