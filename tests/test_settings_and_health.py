@@ -303,3 +303,58 @@ def test_database_migration_consistency():
     out = StringIO()
     call_command("makemigrations", "--dry-run", "--check", stdout=out)
     assert "No changes detected" in out.getvalue() or out.getvalue() == ""
+
+
+def test_reverse_proxy_ssl_header_disabled_by_default():
+    """Verify SECURE_PROXY_SSL_HEADER is disabled by default to prevent spoofing."""
+    from config.settings import parse_security_settings
+
+    cfg = parse_security_settings(env={})
+    assert cfg["SECURE_PROXY_SSL_HEADER"] is None
+
+    cfg_disabled = parse_security_settings(env={"USE_SECURE_PROXY_SSL_HEADER": "False"})
+    assert cfg_disabled["SECURE_PROXY_SSL_HEADER"] is None
+
+
+def test_reverse_proxy_ssl_header_enabled_when_configured():
+    """Verify SECURE_PROXY_SSL_HEADER trusts HTTP_X_FORWARDED_PROTO when configured for App Runner/ALB."""
+    from config.settings import parse_security_settings
+
+    cfg_true = parse_security_settings(env={"USE_SECURE_PROXY_SSL_HEADER": "True"})
+    assert cfg_true["SECURE_PROXY_SSL_HEADER"] == ("HTTP_X_FORWARDED_PROTO", "https")
+
+    cfg_one = parse_security_settings(env={"USE_SECURE_PROXY_SSL_HEADER": "1"})
+    assert cfg_one["SECURE_PROXY_SSL_HEADER"] == ("HTTP_X_FORWARDED_PROTO", "https")
+
+
+def test_secure_cookies_and_ssl_redirect_settings():
+    """Verify cookie security and SSL redirect defaults in development vs production."""
+    from config.settings import parse_security_settings
+
+    # In local dev (debug=True), cookies default to False unless explicitly configured
+    dev_cfg = parse_security_settings(env={}, debug=True)
+    assert dev_cfg["SESSION_COOKIE_SECURE"] is False
+    assert dev_cfg["CSRF_COOKIE_SECURE"] is False
+    assert dev_cfg["SECURE_SSL_REDIRECT"] is False
+    assert dev_cfg["SECURE_HSTS_SECONDS"] == 0
+
+    # In production (debug=False), cookies default to True for security
+    prod_cfg = parse_security_settings(env={}, debug=False)
+    assert prod_cfg["SESSION_COOKIE_SECURE"] is True
+    assert prod_cfg["CSRF_COOKIE_SECURE"] is True
+    assert prod_cfg["SECURE_SSL_REDIRECT"] is False
+
+    # Explicit overrides
+    custom_cfg = parse_security_settings(
+        env={
+            "SESSION_COOKIE_SECURE": "False",
+            "CSRF_COOKIE_SECURE": "False",
+            "SECURE_SSL_REDIRECT": "True",
+            "SECURE_HSTS_SECONDS": "31536000",
+        },
+        debug=False,
+    )
+    assert custom_cfg["SESSION_COOKIE_SECURE"] is False
+    assert custom_cfg["CSRF_COOKIE_SECURE"] is False
+    assert custom_cfg["SECURE_SSL_REDIRECT"] is True
+    assert custom_cfg["SECURE_HSTS_SECONDS"] == 31536000

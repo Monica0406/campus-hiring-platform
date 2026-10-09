@@ -43,6 +43,62 @@ if "testserver" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append("testserver")
 
 
+def parse_security_settings(env=None, debug=None):
+    """
+    Parses reverse-proxy and cookie security settings from environment variables.
+    """
+    if env is None:
+        env = os.environ
+    if debug is None:
+        debug = env.get("DEBUG", "False").lower() in ("true", "1", "t", "yes")
+
+    use_proxy_ssl = env.get("USE_SECURE_PROXY_SSL_HEADER", "False").lower() in (
+        "true",
+        "1",
+        "t",
+        "yes",
+    )
+    proxy_ssl_header = ("HTTP_X_FORWARDED_PROTO", "https") if use_proxy_ssl else None
+
+    session_cookie_secure = env.get(
+        "SESSION_COOKIE_SECURE", "False" if debug else "True"
+    ).lower() in ("true", "1", "t", "yes")
+
+    csrf_cookie_secure = env.get(
+        "CSRF_COOKIE_SECURE", "False" if debug else "True"
+    ).lower() in ("true", "1", "t", "yes")
+
+    ssl_redirect = env.get("SECURE_SSL_REDIRECT", "False").lower() in (
+        "true",
+        "1",
+        "t",
+        "yes",
+    )
+
+    raw_hsts = (env.get("SECURE_HSTS_SECONDS") or "0").strip()
+    try:
+        hsts_seconds = int(raw_hsts) if raw_hsts else 0
+    except ValueError:
+        hsts_seconds = 0
+
+    return {
+        "SECURE_PROXY_SSL_HEADER": proxy_ssl_header,
+        "SESSION_COOKIE_SECURE": session_cookie_secure,
+        "CSRF_COOKIE_SECURE": csrf_cookie_secure,
+        "SECURE_SSL_REDIRECT": ssl_redirect,
+        "SECURE_HSTS_SECONDS": hsts_seconds,
+    }
+
+
+_security_cfg = parse_security_settings(debug=DEBUG)
+SECURE_PROXY_SSL_HEADER = _security_cfg["SECURE_PROXY_SSL_HEADER"]
+SESSION_COOKIE_SECURE = _security_cfg["SESSION_COOKIE_SECURE"]
+CSRF_COOKIE_SECURE = _security_cfg["CSRF_COOKIE_SECURE"]
+SECURE_SSL_REDIRECT = _security_cfg["SECURE_SSL_REDIRECT"]
+SECURE_HSTS_SECONDS = _security_cfg["SECURE_HSTS_SECONDS"]
+
+
+
 
 
 # ============================================================
