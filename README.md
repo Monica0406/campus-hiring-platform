@@ -348,49 +348,59 @@ System:
 
 ## 11. Tests
 
-The backend is validated by a comprehensive test suite implemented in **Pytest** with **pytest-django**, covering bcrypt password hashing, service layer business rules, automated eligibility verification, recruitment lifecycle state transitions, and API permission boundaries.
+The platform is validated by an automated test suite across backend and frontend (113 backend pytest tests + 3 frontend unit tests = 116 tests total), covering bcrypt password hashing, service layer business rules, automated eligibility verification, recruitment lifecycle state transitions, API permission boundaries, AWS deployment settings, and CI configurations.
 
 ### Run the Test Suite
 From the repository root with virtual environment activated:
 
 ```powershell
-# Run all 61 tests
+# Run all 113 backend tests
 .\venv\Scripts\python.exe -m pytest
 
 # Run with verbose output
 .\venv\Scripts\python.exe -m pytest -v
 
-# Run a specific test module
-.\venv\Scripts\python.exe -m pytest tests/test_workflow_service.py
+# Run frontend unit tests
+cd frontend
+npm test
+cd ..
 ```
 
-### Test Suite Structure & Coverage (61 Tests Passing)
+### Test Suite Structure & Coverage (113 Backend Tests + 3 Frontend Tests Passing)
 
 ```text
 tests/
 ├── test_auth.py                 (9 tests: bcrypt hashing compliance, plaintext non-storage, API non-exposure, login, JWT refresh, PBKDF2 compatibility)
-├── test_drive_service.py        (6 tests: creation, defaults, active queries, ID lookup)
+├── test_drive_service.py        (8 tests: creation, defaults, active queries, ID lookup, inactive drives)
 ├── test_application_service.py  (8 tests: CGPA eligibility, department rules, duplicates, history)
-├── test_workflow_service.py     (14 tests: shortlisting, interviews, pass/fail, offers, rejections)
+├── test_workflow_service.py     (18 tests: shortlisting, interviews, pass/fail, offers, rejections, salary validators)
 ├── test_api_permissions.py      (7 tests: role boundaries, cross-user isolation, auth guards)
-├── test_resume_storage.py       (3 tests: PDF upload via API, template view upload, DB path reference, media isolation)
-└── hiring/tests.py              (14 tests: end-to-end integration and API test cases with bcrypt assertions)
+├── test_resume_storage.py       (6 tests: PDF upload, S3 private storage, presigned URLs, media isolation)
+├── test_settings_and_health.py  (23 tests: health 200/503, DEBUG defaults, CORS, WhiteNoise, RDS SSL, reverse proxy, secure cookies, logging)
+├── test_amplify_config.py       (4 tests: amplify.yml syntax, monorepo build phases, package scripts, dist structure)
+├── test_ci_workflows.py         (4 tests: backend CI, frontend CI, pinned actions, build commands)
+├── test_docker_config.py        (4 tests: Dockerfile base, non-root user, health check, .dockerignore)
+├── test_entrypoint_script.py    (4 tests: entrypoint POSIX shebang, DB bounded retry, conditional migrate, exec signal forwarding)
+└── hiring/tests.py              (15 tests: end-to-end integration and API test cases with bcrypt assertions)
 
-Result: 61 passed in ~70s (100% pass rate, 0 failures)
+Result: 113 backend tests + 3 frontend unit tests = 116 passed (100% pass rate, 0 failures)
 ```
 
 ---
 
 ## 12. Deployment
 
-*Status: **Pending / TBD***  
-*(Production cloud deployment will be configured in a subsequent milestone. Below is the planned architecture).*
+The application is prepared for enterprise cloud deployment on Amazon Web Services (AWS) using managed container, database, and hosting services:
 
-### Planned Deployment Architecture
-- **Web Server / Ingress**: Nginx reverse proxy serving static React build files (`frontend/dist/`) and forwarding `/api/` traffic.
-- **Application Server**: Gunicorn WSGI running multiple worker processes for Django backend.
-- **Database**: Managed MySQL 8.0 instance with automated backups and connection pooling.
-- **Containerization**: Multi-stage `Dockerfile` and `docker-compose.yml` orchestrating frontend, backend, and MySQL services.
+### Production Cloud Architecture
+- **Frontend Hosting (AWS Amplify)**: Continuous deployment of React 18 single-page application using repository-level `amplify.yml` build specification and SPA 200 rewrite rule.
+- **Backend API (AWS App Runner / Amazon ECS)**: Containerized Python 3.14-slim Django REST API served by Gunicorn WSGI server and WhiteNoise static asset engine.
+- **Relational Database (Amazon RDS for MySQL 8.0)**: Managed database cluster with strict TLS certificate verification (`VERIFY_IDENTITY` mode with AWS global CA bundle).
+- **Candidate Resume Storage (Amazon S3)**: Private S3 object storage bucket with public access blocked and pre-signed temporary URLs.
+- **Automated CI/CD (GitHub Actions)**: Continuous integration workflows for backend test validation (`.github/workflows/backend-ci.yml`) and frontend builds (`.github/workflows/frontend-ci.yml`).
+
+For detailed architecture diagrams, environment variable reference, step-by-step deployment instructions, and operational troubleshooting, refer to:
+👉 **[`docs/aws_deployment_runbook.md`](docs/aws_deployment_runbook.md)**
 
 ---
 
@@ -398,22 +408,30 @@ Result: 61 passed in ~70s (100% pass rate, 0 failures)
 
 ```
 capspro/
+├── .dockerignore                      # Docker build context exclusion rules
 ├── .env.example                       # Root environment configuration template
+├── .github/                           # GitHub configuration and automation
+│   └── workflows/
+│       ├── backend-ci.yml             # Backend tests, system check, and deploy check
+│       └── frontend-ci.yml            # Frontend npm test and production build
 ├── .gitignore                         # Git exclusion rules for secrets, venv, media, and builds
+├── Dockerfile                         # Production container specification with non-root user
+├── amplify.yml                        # AWS Amplify frontend build specification
 ├── CHANGELOG.md                       # Semantic chronological history of project milestones
 ├── LICENSE                            # Standard MIT open-source license
 ├── Problem_Statement.md               # Formal capstone problem definition and scope
 ├── README.md                          # Comprehensive project documentation
 ├── manage.py                          # Django management script
 ├── pytest.ini                         # Pytest configuration file
-├── requirements.txt                   # Backend Python package dependencies (including bcrypt)
+├── requirements.txt                   # Backend Python package dependencies (including bcrypt, gunicorn, whitenoise)
 ├── config/                            # Django project configuration
 │   ├── __init__.py
 │   ├── asgi.py
-│   ├── settings.py                    # Database, JWT, CORS, PASSWORD_HASHERS config
+│   ├── settings.py                    # Database, RDS SSL, JWT, CORS, reverse-proxy, logging
 │   ├── urls.py                        # Root URL dispatcher routing to /api/ and Swagger docs
 │   └── wsgi.py
 ├── docs/                              # Project design and diagrams
+│   ├── aws_deployment_runbook.md      # AWS cloud architecture and deployment runbook
 │   └── diagrams/
 │       ├── README.md                  # Diagram catalog and guidelines
 │       ├── system_architecture.md     # 4-tier system architecture diagram
@@ -421,13 +439,13 @@ capspro/
 │       ├── class_module_diagram.md    # Object-oriented class and module hierarchy
 │       └── api_contract_diagram.md    # Sequential API workflow diagrams
 ├── frontend/                          # React 18 frontend single-page application
-│   ├── .env.example                   # Frontend environment template
+│   ├── .env.example                   # Frontend environment template with Amplify URL guidance
 │   ├── index.html                     # HTML entry point
-│   ├── package.json                   # Node package dependencies and scripts
+│   ├── package.json                   # Node package dependencies, build and test scripts
 │   ├── vite.config.js                 # Vite bundler configuration
-│   ├── README.md                      # Frontend-specific quickstart and routing guide
+│   ├── README.md                      # Frontend-specific quickstart, Amplify, and SPA rewrite guide
 │   └── src/
-│       ├── api/                       # Central Axios client with JWT interceptor & URL normalization
+│       ├── api/                       # Central Axios client with URL normalization and unit tests
 │       ├── components/                # Reusable UI widgets (Navbar, StatCard, ProtectedRoute)
 │       ├── context/                   # Global AuthContext & state store
 │       ├── pages/                     # Routed pages (auth, student, company, drives)
@@ -443,8 +461,11 @@ capspro/
 │   └── services/                      # Decoupled business logic (drive, app, workflow)
 ├── media/                             # Runtime user uploads (Git-ignored)
 │   └── resumes/                       # Student uploaded PDF resume files
-└── tests/                             # Pytest automated test suite (61 tests)
+├── scripts/                           # Deployment and container automation scripts
+│   └── entrypoint.sh                  # Container entrypoint with database pre-flight checks
+└── tests/                             # Pytest automated test suite (113 backend tests)
 ```
+
 
 ---
 
