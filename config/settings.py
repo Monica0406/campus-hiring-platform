@@ -189,6 +189,44 @@ WHITENOISE_MANIFEST_STRICT = False
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Optional Amazon S3 Resume Storage
+# Enabled only when AWS_STORAGE_BUCKET_NAME is explicitly set in environment.
+# Local development defaults to FileSystemStorage (media/ directory).
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "").strip()
+
+if AWS_STORAGE_BUCKET_NAME:
+    AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "us-east-1").strip()
+    AWS_S3_SIGNATURE_VERSION = os.getenv("AWS_S3_SIGNATURE_VERSION", "s3v4").strip()
+
+    s3_options = {
+        "bucket_name": AWS_STORAGE_BUCKET_NAME,
+        "region_name": AWS_S3_REGION_NAME,
+        "signature_version": AWS_S3_SIGNATURE_VERSION,
+        # Private bucket policy: do not send public ACLs
+        "default_acl": None,
+        # Generate pre-signed temporary URLs for private resumes
+        "querystring_auth": True,
+        "querystring_expire": int(os.getenv("AWS_QUERYSTRING_EXPIRE", "3600")),
+        "file_overwrite": False,
+    }
+
+    # Optional credentials override; in App Runner/ECS prefer IAM task role
+    aws_access_key = os.getenv("AWS_ACCESS_KEY_ID", "").strip()
+    aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY", "").strip()
+    if aws_access_key and aws_secret_key:
+        s3_options["access_key"] = aws_access_key
+        s3_options["secret_key"] = aws_secret_key
+
+    # Custom endpoint for LocalStack or custom S3-compatible endpoints
+    aws_s3_endpoint_url = os.getenv("AWS_S3_ENDPOINT_URL", "").strip()
+    if aws_s3_endpoint_url:
+        s3_options["endpoint_url"] = aws_s3_endpoint_url
+
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": s3_options,
+    }
+
 
 # ============================================================
 # Django REST Framework

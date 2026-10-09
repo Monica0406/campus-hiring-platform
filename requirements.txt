@@ -1,9 +1,11 @@
 asgiref==3.12.1
 attrs==26.1.0
 bcrypt==5.0.0
+boto3==1.43.110
 colorama==0.4.6
 Django==6.0.7
 django-cors-headers==4.9.0
+django-storages==1.14.6
 djangorestframework==3.18.0
 djangorestframework_simplejwt==5.5.1
 drf-spectacular==0.30.0
