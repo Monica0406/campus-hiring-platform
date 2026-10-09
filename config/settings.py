@@ -29,12 +29,16 @@ load_dotenv(BASE_DIR / ".env", override=True)
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 
-DEBUG = os.getenv("DEBUG", "True").lower() == "true"
+# Production safety: DEBUG defaults to False if omitted or empty.
+# For local development, set DEBUG=True in your local .env file.
+DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "t", "yes")
 
-raw_hosts = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost,[::1],testserver").split(",")
-ALLOWED_HOSTS = [host.strip() for host in raw_hosts if host.strip()]
+# Allowed hosts parsed from environment (comma-separated).
+# Defaults to localhost and loopback for local development.
+_raw_hosts = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost,[::1],testserver")
+ALLOWED_HOSTS = [host.strip() for host in _raw_hosts.split(",") if host.strip()]
 if not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ["127.0.0.1", "localhost", "[::1]", "testserver"]
+    ALLOWED_HOSTS = ["127.0.0.1", "localhost", "[::1]"]
 if "testserver" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append("testserver")
 
@@ -219,12 +223,21 @@ SPECTACULAR_SETTINGS = {
 
 CORS_ALLOW_ALL_ORIGINS = False
 
-CORS_ALLOWED_ORIGINS = [
+DEFAULT_CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
+
+# In production, CORS_ALLOWED_ORIGINS can be supplied as a comma-separated list
+# of allowed origins (e.g. https://main.d123.amplifyapp.com).
+# If unset or empty, defaults to local Vite/React dev origins.
+_raw_cors = os.getenv("CORS_ALLOWED_ORIGINS", "")
+if _raw_cors.strip():
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in _raw_cors.split(",") if origin.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = list(DEFAULT_CORS_ALLOWED_ORIGINS)
 
 CORS_ALLOW_CREDENTIALS = True
 
