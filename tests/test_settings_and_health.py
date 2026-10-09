@@ -303,6 +303,3 @@ def test_database_migration_consistency():
     out = StringIO()
     call_command("makemigrations", "--dry-run", "--check", stdout=out)
     assert "No changes detected" in out.getvalue() or out.getvalue() == ""
-
-
-
