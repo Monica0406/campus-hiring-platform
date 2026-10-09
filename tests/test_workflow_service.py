@@ -288,3 +288,61 @@ def test_cannot_reject_offered_or_already_rejected(test_setup):
         hiring_workflow_service.reject_application(app)
 
     assert "Cannot reject application currently in 'REJECTED' status" in str(exc_info.value)
+
+
+@pytest.mark.django_db
+def test_offer_cannot_be_created_with_blank_position(test_setup):
+    """Verify offer creation raises WorkflowError when position is empty or whitespace."""
+    app = test_setup["application"]
+    hiring_workflow_service.shortlist_application(app)
+    interview = hiring_workflow_service.schedule_interview(
+        application=app,
+        interview_date=timezone.now() + timedelta(days=1),
+    )
+    hiring_workflow_service.record_interview_result(interview, passed=True)
+
+    with pytest.raises(WorkflowError) as exc_info:
+        hiring_workflow_service.create_offer(
+            application=app,
+            position="   ",
+            salary="80000.00",
+        )
+
+    assert "Offer position title cannot be empty" in str(exc_info.value)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("invalid_salary", [0, -5000, "-100.00", Decimal("0")])
+def test_offer_cannot_be_created_with_non_positive_salary(test_setup, invalid_salary):
+    """Verify offer creation raises WorkflowError when salary is zero or negative."""
+    app = test_setup["application"]
+    hiring_workflow_service.shortlist_application(app)
+    interview = hiring_workflow_service.schedule_interview(
+        application=app,
+        interview_date=timezone.now() + timedelta(days=1),
+    )
+    hiring_workflow_service.record_interview_result(interview, passed=True)
+
+    with pytest.raises(WorkflowError) as exc_info:
+        hiring_workflow_service.create_offer(
+            application=app,
+            position="Software Engineer",
+            salary=invalid_salary,
+        )
+
+    assert "Offer salary must be greater than zero" in str(exc_info.value)
+
+
+def test_offer_create_serializer_validates_salary_and_position():
+    """Verify OfferCreateSerializer enforces min_value on salary and rejects blank positions."""
+    from hiring.schemas.offer import OfferCreateSerializer
+
+    invalid_data = {
+        "application_id": 1,
+        "position": "   ",
+        "salary": "-500.00",
+    }
+    serializer = OfferCreateSerializer(data=invalid_data)
+    assert not serializer.is_valid()
+    assert "position" in serializer.errors
+    assert "salary" in serializer.errors

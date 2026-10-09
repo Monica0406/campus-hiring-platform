@@ -150,8 +150,14 @@ def create_offer(
             "Cannot create offer: No cleared interview record found for this application."
         )
 
+    if not position or not str(position).strip():
+        raise WorkflowError("Offer position title cannot be empty.")
+
     if isinstance(salary, (int, float, str)):
         salary = Decimal(str(salary))
+
+    if salary <= Decimal("0"):
+        raise WorkflowError("Offer salary must be greater than zero.")
 
     offer = Offer.objects.create(
         application=application,

@@ -2,6 +2,7 @@
 Offer serializers for creating, updating, and viewing job offers.
 """
 
+from decimal import Decimal
 from rest_framework import serializers
 from hiring.models import Offer
 
@@ -46,8 +47,8 @@ class OfferCreateSerializer(serializers.Serializer):
     Input serializer for creating an offer.
     """
     application_id = serializers.IntegerField(required=True)
-    position = serializers.CharField(max_length=100, required=True)
-    salary = serializers.DecimalField(max_digits=10, decimal_places=2, required=True)
+    position = serializers.CharField(max_length=100, min_length=1, allow_blank=False, trim_whitespace=True, required=True)
+    salary = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal("0.01"), required=True)
 
 
 class OfferRespondSerializer(serializers.Serializer):
