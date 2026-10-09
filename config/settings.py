@@ -44,6 +44,7 @@ if "testserver" not in ALLOWED_HOSTS:
 
 
 
+
 # ============================================================
 # Application definition
 # ============================================================
@@ -100,19 +101,111 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 
 # ============================================================
-# Database
+# Database Configuration (MySQL 8.0+ / Amazon RDS)
 # ============================================================
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": os.getenv("DB_HOST", "127.0.0.1"),
-        "PORT": os.getenv("DB_PORT", "3306"),
+from django.core.exceptions import ImproperlyConfigured
+
+VALID_DB_SSL_MODES = ("DISABLED", "PREFERRED", "REQUIRED", "VERIFY_CA", "VERIFY_IDENTITY")
+
+
+def _parse_int_setting(val, default: int, min_val: int = 0) -> int:
+    """Safely parse integer settings with default fallback and minimum bound."""
+    if val is None:
+        return default
+    try:
+        parsed = int(str(val).strip())
+        return parsed if parsed >= min_val else default
+    except (ValueError, TypeError):
+        return default
+
+
+def build_database_config(env=None) -> dict:
+    """
+    Builds the Django DATABASES['default'] configuration dictionary
+    supporting local development and secure Amazon RDS MySQL connections.
+    """
+    get_env = env.get if env is not None else os.getenv
+
+    db_connect_timeout = _parse_int_setting(get_env("DB_CONNECT_TIMEOUT"), default=10, min_val=1)
+    db_conn_max_age = _parse_int_setting(get_env("DB_CONN_MAX_AGE"), default=60, min_val=0)
+    db_conn_health_checks_raw = get_env("DB_CONN_HEALTH_CHECKS")
+    db_conn_health_checks = (
+        str(db_conn_health_checks_raw).strip().lower() in ("true", "1", "yes")
+        if db_conn_health_checks_raw is not None
+        else (db_conn_max_age > 0)
+    )
+    db_port = _parse_int_setting(get_env("DB_PORT"), default=3306, min_val=1)
+
+    db_options = {
+        "charset": "utf8mb4",
+        "connect_timeout": db_connect_timeout,
     }
+
+    # SSL / TLS configuration for Amazon RDS MySQL
+    db_ssl_mode_raw = get_env("DB_SSL_MODE") or ""
+    db_ssl_mode = db_ssl_mode_raw.strip().upper()
+
+    db_ssl_ca_raw = get_env("DB_SSL_CA") or ""
+    db_ssl_ca = db_ssl_ca_raw.strip()
+
+    db_ssl_require_raw = get_env("DB_SSL_REQUIRE") or "False"
+    db_ssl_require = str(db_ssl_require_raw).strip().lower() in ("true", "1", "yes")
+
+    # Validate explicit SSL mode if provided
+    if db_ssl_mode and db_ssl_mode not in VALID_DB_SSL_MODES:
+        raise ImproperlyConfigured(
+            f"Invalid DB_SSL_MODE '{db_ssl_mode}'. Must be one of: {', '.join(VALID_DB_SSL_MODES)}."
+        )
+
+    # Validate CA bundle path if specified
+    if db_ssl_ca:
+        ca_path = Path(db_ssl_ca)
+        if not ca_path.is_file():
+            raise ImproperlyConfigured(
+                f"Configured DB_SSL_CA file does not exist or is not a valid file: '{db_ssl_ca}'."
+            )
+
+        # Disallow weakening certificate verification when CA bundle is explicitly provided
+        if db_ssl_mode in ("DISABLED", "PREFERRED", "REQUIRED"):
+            raise ImproperlyConfigured(
+                f"Cannot use DB_SSL_MODE='{db_ssl_mode}' when DB_SSL_CA is configured. "
+                "Certificate verification cannot be disabled or weakened. "
+                "Use 'VERIFY_IDENTITY' (recommended) or 'VERIFY_CA'."
+            )
+
+        db_options["ssl"] = {"ca": str(ca_path)}
+        # Default to strict hostname & certificate verification when CA is provided
+        db_options["ssl_mode"] = db_ssl_mode if db_ssl_mode else "VERIFY_IDENTITY"
+
+    elif db_ssl_mode:
+        if db_ssl_mode in ("DISABLED", "PREFERRED") and db_ssl_require:
+            raise ImproperlyConfigured(
+                f"Cannot use DB_SSL_MODE='{db_ssl_mode}' when DB_SSL_REQUIRE is enabled."
+            )
+        db_options["ssl_mode"] = db_ssl_mode
+
+    elif db_ssl_require:
+        db_options["ssl_mode"] = "REQUIRED"
+
+    return {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": get_env("DB_NAME"),
+        "USER": get_env("DB_USER"),
+        "PASSWORD": get_env("DB_PASSWORD"),
+        "HOST": get_env("DB_HOST") or "127.0.0.1",
+        "PORT": str(db_port),
+        "CONN_MAX_AGE": db_conn_max_age,
+        "CONN_HEALTH_CHECKS": db_conn_health_checks,
+        "OPTIONS": db_options,
+    }
+
+
+DATABASES = {
+    "default": build_database_config(),
 }
+
+
 
 
 # ============================================================
@@ -163,7 +256,7 @@ USE_TZ = True
 
 
 # ============================================================
-# Static files
+# Static files (CSS, JavaScript, Images)
 # ============================================================
 
 STATIC_URL = "static/"
@@ -183,7 +276,7 @@ WHITENOISE_MANIFEST_STRICT = False
 
 
 # ============================================================
-# Media / File uploads
+# Media / File uploads (Local Filesystem default / Optional Amazon S3)
 # ============================================================
 
 MEDIA_URL = "/media/"
@@ -226,6 +319,7 @@ if AWS_STORAGE_BUCKET_NAME:
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": s3_options,
     }
+
 
 
 # ============================================================
@@ -290,6 +384,7 @@ if _raw_cors.strip():
     CORS_ALLOWED_ORIGINS = [origin.strip() for origin in _raw_cors.split(",") if origin.strip()]
 else:
     CORS_ALLOWED_ORIGINS = list(DEFAULT_CORS_ALLOWED_ORIGINS)
+
 
 CORS_ALLOW_CREDENTIALS = True
 
