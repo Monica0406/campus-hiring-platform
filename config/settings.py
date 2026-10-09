@@ -449,31 +449,63 @@ CORS_ALLOW_CREDENTIALS = True
 # Logging Configuration
 # ============================================================
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "standard": {
-            "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
-            "datefmt": "%Y-%m-%d %H:%M:%S",
+def build_logging_config(env=None):
+    """
+    Constructs the logging dictionary configuration with environment-driven log levels.
+    Supports DJANGO_LOG_LEVEL and APP_LOG_LEVEL (default: INFO).
+    Configures loggers for hiring, django.request, django.security, and django.server.
+    """
+    if env is None:
+        env = os.environ
+
+    valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+
+    django_log_level = (env.get("DJANGO_LOG_LEVEL") or "INFO").strip().upper()
+    if django_log_level not in valid_levels:
+        django_log_level = "INFO"
+
+    app_log_level = (env.get("APP_LOG_LEVEL") or "INFO").strip().upper()
+    if app_log_level not in valid_levels:
+        app_log_level = "INFO"
+
+    return {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "standard": {
+                "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+            },
         },
-    },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "standard",
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "standard",
+            },
         },
-    },
-    "loggers": {
-        "hiring": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
+        "loggers": {
+            "hiring": {
+                "handlers": ["console"],
+                "level": app_log_level,
+                "propagate": False,
+            },
+            "django.request": {
+                "handlers": ["console"],
+                "level": "WARNING" if django_log_level != "DEBUG" else "DEBUG",
+                "propagate": False,
+            },
+            "django.security": {
+                "handlers": ["console"],
+                "level": "WARNING" if django_log_level != "DEBUG" else "DEBUG",
+                "propagate": False,
+            },
+            "django.server": {
+                "handlers": ["console"],
+                "level": django_log_level,
+                "propagate": False,
+            },
         },
-        "django.request": {
-            "handlers": ["console"],
-            "level": "WARNING",
-            "propagate": False,
-        },
-    },
-}
+    }
+
+
+LOGGING = build_logging_config()

@@ -358,3 +358,35 @@ def test_secure_cookies_and_ssl_redirect_settings():
     assert custom_cfg["CSRF_COOKIE_SECURE"] is False
     assert custom_cfg["SECURE_SSL_REDIRECT"] is True
     assert custom_cfg["SECURE_HSTS_SECONDS"] == 31536000
+
+
+def test_logging_configuration_defaults_and_overrides():
+    """Verify build_logging_config defaults to INFO and applies environment log levels."""
+    from config.settings import build_logging_config
+
+    default_cfg = build_logging_config(env={})
+    assert default_cfg["version"] == 1
+    assert "django.security" in default_cfg["loggers"]
+    assert "django.server" in default_cfg["loggers"]
+    assert "hiring" in default_cfg["loggers"]
+    assert default_cfg["loggers"]["hiring"]["level"] == "INFO"
+    assert default_cfg["loggers"]["django.server"]["level"] == "INFO"
+
+    # Custom level overrides
+    custom_cfg = build_logging_config(
+        env={"DJANGO_LOG_LEVEL": "DEBUG", "APP_LOG_LEVEL": "WARNING"}
+    )
+    assert custom_cfg["loggers"]["hiring"]["level"] == "WARNING"
+    assert custom_cfg["loggers"]["django.server"]["level"] == "DEBUG"
+    assert custom_cfg["loggers"]["django.security"]["level"] == "DEBUG"
+
+
+def test_logging_invalid_levels_fallback_to_info():
+    """Verify invalid log level strings safely fall back to INFO."""
+    from config.settings import build_logging_config
+
+    safe_cfg = build_logging_config(
+        env={"DJANGO_LOG_LEVEL": "INVALID_LVL", "APP_LOG_LEVEL": "NONEXISTENT"}
+    )
+    assert safe_cfg["loggers"]["hiring"]["level"] == "INFO"
+    assert safe_cfg["loggers"]["django.server"]["level"] == "INFO"
