@@ -390,3 +390,45 @@ def test_logging_invalid_levels_fallback_to_info():
     )
     assert safe_cfg["loggers"]["hiring"]["level"] == "INFO"
     assert safe_cfg["loggers"]["django.server"]["level"] == "INFO"
+
+
+def test_database_config_railway_mysql_environment_fallbacks():
+    """Verify build_database_config reads Railway-specific MySQL variables when DB_* are unset."""
+    from config.settings import build_database_config
+
+    cfg = build_database_config(env={
+        "MYSQLDATABASE": "railway_campus_db",
+        "MYSQLUSER": "railway_user",
+        "MYSQLPASSWORD": "railway_secret_password",
+        "MYSQLHOST": "mysql.railway.internal",
+        "MYSQLPORT": "3307",
+    })
+    assert cfg["NAME"] == "railway_campus_db"
+    assert cfg["USER"] == "railway_user"
+    assert cfg["PASSWORD"] == "railway_secret_password"
+    assert cfg["HOST"] == "mysql.railway.internal"
+    assert cfg["PORT"] == "3307"
+
+
+def test_database_config_railway_database_url_parsing():
+    """Verify build_database_config extracts credentials from standard MySQL connection URLs."""
+    from config.settings import build_database_config
+
+    cfg = build_database_config(env={
+        "DATABASE_URL": "mysql://rw_user:rw_pass@junction.railway.internal:3308/production_db"
+    })
+    assert cfg["NAME"] == "production_db"
+    assert cfg["USER"] == "rw_user"
+    assert cfg["PASSWORD"] == "rw_pass"
+    assert cfg["HOST"] == "junction.railway.internal"
+    assert cfg["PORT"] == "3308"
+
+
+def test_csrf_trusted_origins_configuration():
+    """Verify CSRF_TRUSTED_ORIGINS is configured and includes expected origins."""
+    from django.conf import settings
+
+    assert hasattr(settings, "CSRF_TRUSTED_ORIGINS")
+    assert isinstance(settings.CSRF_TRUSTED_ORIGINS, list)
+    for origin in settings.CSRF_TRUSTED_ORIGINS:
+        assert origin.startswith("http://") or origin.startswith("https://")

@@ -37,9 +37,9 @@ USER appuser
 
 EXPOSE 8000
 
-# Container health check against Django health endpoint
+# Container health check against Django health endpoint (expanding dynamic PORT safely via sh)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health/ || exit 1
+    CMD sh -c 'curl -f http://localhost:${PORT:-8000}/api/health/ || exit 1'
 
-# Default command launches Gunicorn WSGI server
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "60", "--access-logfile", "-", "--error-logfile", "-"]
+# Default command launches Gunicorn WSGI server (honoring dynamic PORT or defaulting to 8000)
+CMD ["sh", "-c", "exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --timeout 60 --access-logfile - --error-logfile -"]

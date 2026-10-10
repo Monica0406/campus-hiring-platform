@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import api, { getErrorMessage } from "../../api/client";
+import api, { getErrorMessage, getMediaUrl } from "../../api/client";
 import StatusBadge from "../../components/StatusBadge";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import AlertMessage from "../../components/AlertMessage";
@@ -46,7 +46,7 @@ export default function DriveApplicants() {
     setError(null);
     setSuccess(null);
     try {
-      await api.post(`/api/applications/${appId}/shortlist/`);
+      await api.post(`/applications/${appId}/shortlist/`);
       setSuccess(`Application #${appId} shortlisted successfully!`);
       fetchData();
     } catch (err) {
@@ -67,7 +67,7 @@ export default function DriveApplicants() {
     setError(null);
     setSuccess(null);
     try {
-      await api.post(`/api/applications/${rejectAppId}/reject/`, {
+      await api.post(`/applications/${rejectAppId}/reject/`, {
         reason: rejectReason,
       });
       setSuccess(`Application #${rejectAppId} rejected.`);
@@ -105,8 +105,10 @@ export default function DriveApplicants() {
                 <span className="badge bg-primary-subtle text-primary mb-2">Drive #{drive.id}</span>
                 <h3 className="fw-bold mb-1">{drive.title}</h3>
                 <p className="text-muted mb-0">
-                  Eligibility: Min GPA {drive.min_gpa} | Max Backlogs {drive.max_backlogs} | Allowed Branches:{" "}
-                  {Array.isArray(drive.allowed_branches) ? drive.allowed_branches.join(", ") : drive.allowed_branches}
+                  Eligibility: Min CGPA {drive.min_cgpa ?? drive.min_gpa ?? "0.00"} | Allowed Departments:{" "}
+                  {Array.isArray(drive.allowed_departments)
+                    ? drive.allowed_departments.join(", ")
+                    : (drive.allowed_departments || drive.allowed_branches || "All")}
                 </p>
               </div>
               <div className="d-flex gap-2">
@@ -171,9 +173,10 @@ export default function DriveApplicants() {
                   <th>App #</th>
                   <th>Student Name</th>
                   <th>Email</th>
-                  <th>GPA</th>
-                  <th>Branch</th>
+                  <th>CGPA</th>
+                  <th>Department</th>
                   <th>Status</th>
+                  <th>Resume</th>
                   <th>Applied On</th>
                   <th className="text-end">Actions</th>
                 </tr>
@@ -192,18 +195,35 @@ export default function DriveApplicants() {
                     </td>
                     <td>
                       <span className="badge bg-light text-dark border">
-                        {app.student_gpa !== undefined ? app.student_gpa : "—"}
+                        {app.student_cgpa !== undefined ? app.student_cgpa : (app.student_gpa !== undefined ? app.student_gpa : "—")}
                       </span>
                     </td>
                     <td>
-                      <span className="text-secondary small">{app.student_branch || "—"}</span>
+                      <span className="text-secondary small">{app.student_department || app.student_branch || "—"}</span>
                     </td>
                     <td>
                       <StatusBadge status={app.status} />
                     </td>
                     <td>
+                      {getMediaUrl(app.student_resume || app.resume) ? (
+                        <a
+                          href={getMediaUrl(app.student_resume || app.resume)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold"
+                          title="View Candidate Resume"
+                        >
+                          <i className="bi bi-file-earmark-pdf me-1"></i>CV
+                        </a>
+                      ) : (
+                        <span className="text-muted small">—</span>
+                      )}
+                    </td>
+                    <td>
                       <small className="text-muted">
-                        {app.applied_at ? new Date(app.applied_at).toLocaleDateString() : "—"}
+                        {app.applied_date
+                          ? new Date(app.applied_date).toLocaleDateString()
+                          : (app.applied_at ? new Date(app.applied_at).toLocaleDateString() : "—")}
                       </small>
                     </td>
                     <td className="text-end">

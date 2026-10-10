@@ -17,6 +17,38 @@ export const baseURL = normalizeApiBaseUrl(
   typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_API_BASE_URL : undefined
 );
 
+/**
+ * Resolves a media or file URL to an absolute accessible URL for direct browser navigation.
+ * - Returns null for empty, undefined, or whitespace-only URLs.
+ * - Returns absolute HTTP/HTTPS URLs unchanged, including S3 presigned URLs.
+ * - Resolves relative /media/... paths against the backend origin, not the Vite frontend origin.
+ * - Handles the configured VITE_API_BASE_URL correctly, including a base URL ending in '/api'.
+ * - Avoids exposing authorization headers or attaching JWT tokens to direct browser navigation.
+ */
+export function getMediaUrl(url, customBaseUrl) {
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    return null;
+  }
+  const trimmed = url.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+
+  const rawBase = customBaseUrl || baseURL;
+  let origin = 'http://127.0.0.1:8000';
+  if (rawBase && typeof rawBase === 'string') {
+    try {
+      const parsed = new URL(rawBase);
+      origin = parsed.origin;
+    } catch {
+      origin = rawBase.replace(/\/+$/, '').replace(/\/api$/, '');
+    }
+  }
+
+  const normalizedPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return `${origin}${normalizedPath}`;
+}
+
 const apiClient = axios.create({
   baseURL,
   headers: {

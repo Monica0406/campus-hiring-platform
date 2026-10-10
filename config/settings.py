@@ -42,6 +42,13 @@ if not ALLOWED_HOSTS:
 if "testserver" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append("testserver")
 
+# Railway dynamic public domain support
+_railway_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN", "").strip()
+if _railway_domain and _railway_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_railway_domain)
+if os.getenv("RAILWAY_ENVIRONMENT") and ".railway.app" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(".railway.app")
+
 
 def parse_security_settings(env=None, debug=None):
     """
@@ -179,9 +186,24 @@ def _parse_int_setting(val, default: int, min_val: int = 0) -> int:
 def build_database_config(env=None) -> dict:
     """
     Builds the Django DATABASES['default'] configuration dictionary
-    supporting local development and secure Amazon RDS MySQL connections.
+    supporting local development, secure Amazon RDS, and Railway MySQL services.
     """
     get_env = env.get if env is not None else os.getenv
+
+    # Parse connection string if provided (e.g. Railway MYSQL_URL or DATABASE_URL)
+    url_name = url_user = url_pass = url_host = url_port = None
+    raw_db_url = get_env("DATABASE_URL") or get_env("MYSQL_URL")
+    if raw_db_url and str(raw_db_url).strip().startswith("mysql://"):
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(str(raw_db_url).strip())
+            url_name = parsed.path.lstrip("/") if parsed.path else None
+            url_user = parsed.username
+            url_pass = parsed.password
+            url_host = parsed.hostname
+            url_port = parsed.port
+        except Exception:
+            pass
 
     db_connect_timeout = _parse_int_setting(get_env("DB_CONNECT_TIMEOUT"), default=10, min_val=1)
     db_conn_max_age = _parse_int_setting(get_env("DB_CONN_MAX_AGE"), default=60, min_val=0)
@@ -191,7 +213,14 @@ def build_database_config(env=None) -> dict:
         if db_conn_health_checks_raw is not None
         else (db_conn_max_age > 0)
     )
-    db_port = _parse_int_setting(get_env("DB_PORT"), default=3306, min_val=1)
+
+    port_val = get_env("DB_PORT") or get_env("MYSQLPORT") or (str(url_port) if url_port else None)
+    db_port = _parse_int_setting(port_val, default=3306, min_val=1)
+
+    db_name = get_env("DB_NAME") or get_env("MYSQLDATABASE") or url_name
+    db_user = get_env("DB_USER") or get_env("MYSQLUSER") or url_user
+    db_password = get_env("DB_PASSWORD") or get_env("MYSQLPASSWORD") or url_pass
+    db_host = get_env("DB_HOST") or get_env("MYSQLHOST") or url_host or "127.0.0.1"
 
     db_options = {
         "charset": "utf8mb4",
@@ -246,10 +275,10 @@ def build_database_config(env=None) -> dict:
 
     return {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": get_env("DB_NAME"),
-        "USER": get_env("DB_USER"),
-        "PASSWORD": get_env("DB_PASSWORD"),
-        "HOST": get_env("DB_HOST") or "127.0.0.1",
+        "NAME": db_name,
+        "USER": db_user,
+        "PASSWORD": db_password,
+        "HOST": db_host,
         "PORT": str(db_port),
         "CONN_MAX_AGE": db_conn_max_age,
         "CONN_HEALTH_CHECKS": db_conn_health_checks,
@@ -443,6 +472,25 @@ else:
 
 
 CORS_ALLOW_CREDENTIALS = True
+
+
+# ============================================================
+# CSRF Trusted Origins (Required for Django 4+ / 6+ behind HTTPS proxies)
+# ============================================================
+
+_raw_csrf = os.getenv("CSRF_TRUSTED_ORIGINS", "")
+if _raw_csrf.strip():
+    CSRF_TRUSTED_ORIGINS = [orig.strip() for orig in _raw_csrf.split(",") if orig.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = []
+    for orig in CORS_ALLOWED_ORIGINS:
+        if orig.startswith("http://") or orig.startswith("https://"):
+            CSRF_TRUSTED_ORIGINS.append(orig)
+
+if _railway_domain:
+    _rw_origin = f"https://{_railway_domain}"
+    if _rw_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(_rw_origin)
 
 
 # ============================================================

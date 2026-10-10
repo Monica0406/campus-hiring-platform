@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import api, { getErrorMessage } from "../../api/client";
+import api, { getErrorMessage, getMediaUrl } from "../../api/client";
 import StatusBadge from "../../components/StatusBadge";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import AlertMessage from "../../components/AlertMessage";
@@ -28,6 +28,7 @@ export default function CompanyApplicationDetail() {
   // Reject modal
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [driveDetails, setDriveDetails] = useState(null);
 
   useEffect(() => {
     fetchApplication();
@@ -43,6 +44,14 @@ export default function CompanyApplicationDetail() {
       if (appData?.drive_title) {
         setOfferPosition(appData.drive_title);
       }
+      if (appData?.drive) {
+        try {
+          const driveRes = await api.get(`/drives/${appData.drive}/`);
+          setDriveDetails(driveRes.data?.data || driveRes.data);
+        } catch {
+          // Non-critical drive detail fallback
+        }
+      }
     } catch (err) {
       setError(getErrorMessage(err, "Failed to load application details."));
     } finally {
@@ -55,7 +64,7 @@ export default function CompanyApplicationDetail() {
     setError(null);
     setSuccess(null);
     try {
-      await api.post(`/api/applications/${id}/shortlist/`);
+      await api.post(`/applications/${id}/shortlist/`);
       setSuccess("Application has been shortlisted!");
       fetchApplication();
     } catch (err) {
@@ -70,7 +79,7 @@ export default function CompanyApplicationDetail() {
     setError(null);
     setSuccess(null);
     try {
-      await api.post(`/api/applications/${id}/reject/`, { reason: rejectReason });
+      await api.post(`/applications/${id}/reject/`, { reason: rejectReason });
       setSuccess("Application has been rejected.");
       setShowRejectModal(false);
       fetchApplication();
@@ -87,7 +96,7 @@ export default function CompanyApplicationDetail() {
     setError(null);
     setSuccess(null);
     try {
-      await api.post("/api/interviews/", {
+      await api.post("/interviews/", {
         application_id: parseInt(id, 10),
         interview_date: new Date(interviewDate).toISOString(),
         mode: interviewMode,
@@ -108,7 +117,7 @@ export default function CompanyApplicationDetail() {
     setError(null);
     setSuccess(null);
     try {
-      await api.post("/api/offers/", {
+      await api.post("/offers/", {
         application_id: parseInt(id, 10),
         position: offerPosition,
         salary: parseFloat(offerSalary),
@@ -133,7 +142,10 @@ export default function CompanyApplicationDetail() {
     );
   }
 
-  const { student_details, drive_details } = application;
+  const { student_details } = application;
+  const driveInfo = driveDetails || application.drive_details;
+  const candidateResumeUrl = getMediaUrl(application.student_resume || application.resume);
+  const appliedDate = application.applied_date || application.applied_at;
 
   return (
     <div className="container py-4">
@@ -164,7 +176,7 @@ export default function CompanyApplicationDetail() {
                 <StatusBadge status={application.status} />
               </div>
               <p className="text-muted mb-0">
-                Applied on {application.applied_at ? new Date(application.applied_at).toLocaleString() : "N/A"}
+                Applied on {appliedDate ? new Date(appliedDate).toLocaleString() : "N/A"}
               </p>
             </div>
 
@@ -253,12 +265,12 @@ export default function CompanyApplicationDetail() {
                 </div>
                 <div className="col-sm-6">
                   <span className="text-muted small d-block">Branch / Department</span>
-                  <span className="fw-semibold">{application.student_branch || student_details?.branch || "N/A"}</span>
+                  <span className="fw-semibold">{application.student_department || application.student_branch || student_details?.branch || "N/A"}</span>
                 </div>
                 <div className="col-sm-6">
-                  <span className="text-muted small d-block">Cumulative GPA</span>
+                  <span className="text-muted small d-block">Cumulative CGPA</span>
                   <span className="badge bg-primary fs-6">
-                    {application.student_gpa !== undefined ? application.student_gpa : student_details?.gpa || "N/A"}
+                    {application.student_cgpa !== undefined ? application.student_cgpa : (application.student_gpa !== undefined ? application.student_gpa : student_details?.gpa || "N/A")}
                   </span>
                 </div>
                 <div className="col-sm-6">
@@ -281,6 +293,20 @@ export default function CompanyApplicationDetail() {
                     )}
                   </div>
                 </div>
+                {candidateResumeUrl && (
+                  <div className="col-12 pt-2 border-top">
+                    <span className="text-muted small d-block mb-1">Resume / CV</span>
+                    <a
+                      href={candidateResumeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-sm btn-outline-primary fw-semibold"
+                    >
+                      <i className="bi bi-file-earmark-pdf me-1"></i>View Applicant Resume{" "}
+                      <i className="bi bi-box-arrow-up-right ms-1"></i>
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -298,22 +324,28 @@ export default function CompanyApplicationDetail() {
               <div className="row g-3">
                 <div className="col-12">
                   <span className="text-muted small d-block">Position / Title</span>
-                  <h6 className="fw-bold mb-1">{application.drive_title || drive_details?.title || "N/A"}</h6>
+                  <h6 className="fw-bold mb-1">{application.drive_title || driveInfo?.title || "N/A"}</h6>
                 </div>
                 <div className="col-sm-6">
-                  <span className="text-muted small d-block">Min GPA Requirement</span>
-                  <span className="fw-semibold">{drive_details?.min_gpa || "—"}</span>
+                  <span className="text-muted small d-block">Min CGPA Requirement</span>
+                  <span className="fw-semibold">{driveInfo?.min_cgpa ?? driveInfo?.min_gpa ?? "—"}</span>
                 </div>
                 <div className="col-sm-6">
-                  <span className="text-muted small d-block">Max Backlogs Allowed</span>
-                  <span className="fw-semibold">{drive_details?.max_backlogs !== undefined ? drive_details.max_backlogs : "—"}</span>
+                  <span className="text-muted small d-block">Allowed Departments</span>
+                  <span className="fw-semibold">{driveInfo?.allowed_departments || driveInfo?.allowed_branches || "All"}</span>
                 </div>
                 <div className="col-12">
                   <span className="text-muted small d-block">Description</span>
                   <p className="text-muted small mb-0">
-                    {drive_details?.description || "No drive description available."}
+                    {driveInfo?.description || "No drive description available."}
                   </p>
                 </div>
+                {driveInfo?.eligibility && (
+                  <div className="col-12">
+                    <span className="text-muted small d-block">Special Eligibility Notes</span>
+                    <small className="text-secondary">{driveInfo.eligibility}</small>
+                  </div>
+                )}
                 {application.rejection_reason && (
                   <div className="col-12">
                     <div className="alert alert-danger mb-0">

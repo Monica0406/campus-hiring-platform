@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import apiClient, { getErrorMessage } from '../../api/client';
+import apiClient, { getErrorMessage, getMediaUrl } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import AlertMessage from '../../components/AlertMessage';
@@ -212,14 +212,14 @@ const StudentProfile = () => {
                     accept=".pdf,.doc,.docx"
                     onChange={handleFileChange}
                   />
-                  {currentResume && (
+                  {getMediaUrl(currentResume) && (
                     <div className="mt-2 small text-muted d-flex align-items-center">
                       <i className="bi bi-file-earmark-check text-success me-2 fs-5"></i>
                       <span>Current uploaded resume: </span>
                       <a
-                        href={currentResume}
+                        href={getMediaUrl(currentResume)}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="ms-1 fw-semibold text-primary"
                       >
                         View Resume <i className="bi bi-box-arrow-up-right"></i>

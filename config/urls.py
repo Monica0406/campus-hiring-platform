@@ -17,7 +17,14 @@ urlpatterns = [
     path("", include("hiring.urls")),
 ]
 
-urlpatterns += static(
-    settings.MEDIA_URL,
-    document_root=settings.MEDIA_ROOT
-)
+if settings.DEBUG:
+    urlpatterns += static(
+        settings.MEDIA_URL,
+        document_root=settings.MEDIA_ROOT,
+    )
+elif not getattr(settings, "AWS_STORAGE_BUCKET_NAME", None):
+    from django.views.static import serve
+    from django.urls import re_path
+    urlpatterns += [
+        re_path(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
+    ]
